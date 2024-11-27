@@ -1,0 +1,8 @@
+{
+    "Header": "Civilization 5 Race Draft",
+    "PlayersNumberField": "Number of players",
+    "BannedCivilizationsField": "Banned civilizations",
+    "GenerateButton": "Generate",
+    "ErrorNotEnoughItems": "Too many races banned, not enough for the pick",
+    "PlayerColumnCaption": "Player"
+}

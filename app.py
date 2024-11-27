@@ -1,14 +1,25 @@
 import streamlit as st
 
 from random import choice
+from os import path
+from json import load
 
-st.header('Civilization 5 Race Draft')
+def load_data(file_name):
+    if not path.exists(file_name):
+        return []
+    
+    with open(file_name, 'r', encoding='utf-8') as file:
+        return load(file)
+
+LOCALIZATION_FILE = 'data/localization.json'
+CIVILIZATIONS_FILE = 'data/civilizations.json'
+LOCALIZATION = load_data(LOCALIZATION_FILE)
 
 def error(text):
     st.error(text, icon=':material/error:')
     st.stop()
 
-def civilization_groups():
+def default_groups():
     group1 = {
         "America": {"Icon": "https://static.wikia.nocookie.net/civilization/images/c/c0/American_%28Civ5%29.png", "Link": "https://civilization.fandom.com/wiki/American_(Civ5)"},
         "Assyria": {"Icon": "https://static.wikia.nocookie.net/civilization/images/c/ca/Assyrian_%28Civ5%29.png", "Link": "https://civilization.fandom.com/wiki/Assyrian_(Civ5)"},
@@ -91,7 +102,7 @@ def player_choices(groups, players, banned):
             if civilization in group:
                 group.pop(civilization)
             if len(group) < players:
-                error('Too many races banned, not enough for the pick')
+                error(LOCALIZATION['ErrorNotEnoughItems'])
 
     result = []
     for _ in range(0, players):
@@ -108,17 +119,17 @@ def display_choices(choices, columns = None):
     if not choices:
         return
     
-    if columns == None:
+    if columns == None or len(choices) < columns:
         columns = len(choices)
 
     collection = st.columns(columns)
     index = 0
-    player_index = 0
+    player_index = 1
     for player in choices:
         column = collection[index]
 
         with column:
-            st.subheader(f'Player {player_index + 1}')
+            st.subheader(f'{LOCALIZATION["PlayerColumnCaption"]} {player_index}')
             for choice in player:
                 civilization_link(choice['Icon'], choice['Link'], choice['Civ'])
             st.divider()
@@ -128,19 +139,26 @@ def display_choices(choices, columns = None):
         if index >= columns:
             index = 0
 
-col1, col2 = st.columns(2)
-groups = civilization_groups()
-civ_list = civilization_list(groups)
+def draw_interface():
+    st.header(LOCALIZATION['Header'])
 
-with col1:
-    players = range(1, 9)
-    players = st.selectbox('Players', players, index=None, placeholder='Number of players', label_visibility='hidden')
+    col1, col2 = st.columns(2)
 
-with col2:
-    banned = st.multiselect('Banned', civ_list, placeholder='Banned civilizations', label_visibility='hidden')
+    groups = load_data(CIVILIZATIONS_FILE)
+    if not groups:
+        groups = default_groups()
+    civ_list = civilization_list(groups)
 
-if st.button('Generate', use_container_width=True):
-    if players:
-        choices = player_choices(groups, int(players), banned)
-        display_choices(choices, 4)
-    
+    with col1:
+        players = range(1, 9)
+        players = st.selectbox('Players', players, index=None, placeholder=LOCALIZATION['PlayersNumberField'], label_visibility='hidden')
+
+    with col2:
+        banned = st.multiselect('Banned', civ_list, placeholder=LOCALIZATION['BannedCivilizationsField'], label_visibility='hidden')
+
+    if st.button(LOCALIZATION['GenerateButton'], use_container_width=True):
+        if players:
+            choices = player_choices(groups, int(players), banned)
+            display_choices(choices, 4)
+
+draw_interface()
